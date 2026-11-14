@@ -11,25 +11,14 @@
 \graphicspath{{vae_outputs/}}
 
 \title{Variational Autoencoders on Two-Moons Data and Conditional MNIST}
-\author{Angel Rodriguez}
+\author{Angel Rodriguez, Johnny Vuong}
 \date{\today}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This report studies variational autoencoders (VAEs) on a synthetic two-dimensional
-two-moons distribution and on handwritten MNIST digits. The experiments vary both
-the dimension of the latent space and the width/depth of the neural network.
-Performance is evaluated using reconstruction and Kullback--Leibler (KL) losses,
-but generated samples are treated as the primary qualitative criterion. On the
-two-moons problem, a latent dimension of two is sufficient to represent the
-distribution, and increasing the latent dimension does not improve the samples.
-On conditional MNIST, the two-dimensional latent model produced the most
-convincing samples in the visual comparison, even though larger latent spaces
-achieved lower reconstruction losses. Changing network width and depth had a
-smaller visual effect than changing the latent dimension; the deepest model was
-only marginally better than the medium and shallow alternatives.
+This report evaluates variational autoencoders (VAEs) on a synthetic two-moons distribution and conditional MNIST, varying latent dimension and network architecture. We assess reconstruction and Kullback--Leibler (KL) losses alongside the quality of newly generated samples. On two moons, a two-dimensional latent space captures the distribution, while larger latent spaces offer no clear visual improvement. Wider and deeper networks improve sample structure, but the gains diminish as parameter counts increase. On conditional MNIST, the two-dimensional latent model produces the most recognizable samples in our visual comparison, despite larger latent spaces achieving lower reconstruction losses. Changing network depth and width has a much smaller visible effect: generated samples look broadly similar across architectures, even though the deeper model achieves somewhat better reconstruction metrics. Overall, these results show that reconstruction loss alone does not determine sample quality and that model capacity should be evaluated alongside computational cost.
 \end{abstract}
 
 \section{Introduction}
@@ -88,8 +77,7 @@ where
 \]
 The two-moons experiments use mean-squared error for reconstruction and
 $\beta_{\max}=0.25$. MNIST uses binary cross-entropy with logits and
-$\beta_{\max}=1$. In both cases, $\beta$ is warmed up over the first half of
-training. The reported reconstruction and KL values are separate components;
+$\beta_{\max}=1$. In both cases, $\beta$ is gradually increased from zero to its maximum value over the first half of training, allowing the model to focus on reconstruction before applying the full KL regularization. The reported reconstruction and KL values are separate components;
 KL is a regularization term, not another reconstruction error.
 
 \subsection{Implementation and data}
@@ -172,12 +160,7 @@ Deep-128x3 & 67,590 & 0.684 & 0.198 & 1.950 \\
 \end{tabular}
 \end{table}
 
-The deep model has the lowest test reconstruction loss, but it uses more than
-seven times as many parameters as the medium model and more than 170 times as
-many as the shallow model. The generated samples are all broadly successful,
-so the visual improvement from adding depth and width is modest compared with
-the computational cost. This supports the conclusion that the latent
-dimension is the more important design choice for this distribution.
+The deep model achieves the lowest test reconstruction loss, but it uses more than 7 times as many parameters as the medium model and over 170 times as many as the shallow model. The shallow model's generated samples appear random, while the medium model begins to capture the two curved components and the deep model captures them most clearly. Thus, the visual improvement is substantial from the shallow to the medium model but modest from the medium to the deep model. This suggests diminishing visual returns as model size and computational cost increase.
 
 \begin{figure}[H]
 \centering
@@ -214,8 +197,8 @@ Latent dimension & Parameters & Validation total & Test reconstruction & Test KL
 \end{tabular}
 \end{table}
 
-The numerical reconstruction loss decreases substantially as the latent
-dimension increases, with most of the improvement occurring by dimension 16.
+The numerical reconstruction loss decreases as the latent
+dimension increases, but flattens by dimension 16.
 The KL term increases because the larger latent representations carry more
 information and therefore deviate more from the unit Gaussian prior. This is
 not evidence that the larger models are incorrect: a lower KL term is not
@@ -232,33 +215,32 @@ reconstruction metrics. It also suggests that a larger latent space can make
 the posterior represent training examples more accurately without making the
 prior-to-decoder path easier to sample from after finite training.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
-\begin{subfigure}{0.48\textwidth}
+\begin{subfigure}{0.32\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{mnist_generated_z2.png}
+    \includegraphics[width=0.85\linewidth]{mnist_generated_z2.png}
     \caption{$z=2$}
 \end{subfigure}
-\begin{subfigure}{0.48\textwidth}
+\begin{subfigure}{0.32\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{mnist_generated_z4.png}
+    \includegraphics[width=0.85\linewidth]{mnist_generated_z4.png}
     \caption{$z=4$}
 \end{subfigure}
-
-\begin{subfigure}{0.48\textwidth}
+\begin{subfigure}{0.32\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{mnist_generated_z8.png}
+    \includegraphics[width=0.85\linewidth]{mnist_generated_z8.png}
     \caption{$z=8$}
 \end{subfigure}
-\begin{subfigure}{0.48\textwidth}
+
+\begin{subfigure}{0.32\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{mnist_generated_z16.png}
+    \includegraphics[width=0.85\linewidth]{mnist_generated_z16.png}
     \caption{$z=16$}
 \end{subfigure}
-
-\begin{subfigure}{0.48\textwidth}
+\begin{subfigure}{0.32\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{mnist_generated_z32.png}
+    \includegraphics[width=0.85\linewidth]{mnist_generated_z32.png}
     \caption{$z=32$}
 \end{subfigure}
 \caption{New conditional MNIST samples for each latent dimension. Each row
@@ -274,7 +256,7 @@ layers $(64)$, $(256,128)$, and $(256,128,64)$, respectively.
 
 \begin{table}[H]
 \centering
-\caption{Conditional MNIST architecture results with latent dimension two.}
+\caption{Conditional MNIST architecture results with latent dimension $z=2$.}
 \label{tab:mnist-architecture}
 \begin{tabular}{lrrrr}
 \toprule
@@ -292,7 +274,7 @@ reconstruction error, but its advantage over the medium model is small. The
 generated images also look broadly similar across the three architectures.
 The shallow network has fewer parameters and performs worse numerically, but
 the medium and deep models are close in both sample quality and metrics. Thus,
-for this experiment, increasing network depth and width has less visible
+for this experiment, increasing network depth and width has much less visible
 impact than changing the latent dimension.
 
 \begin{figure}[H]
@@ -334,67 +316,47 @@ conditional samples. Column titles identify the requested digit.}
 
 \section{Discussion}
 
-Several conclusions emerge from the experiments.
-
 \paragraph{Latent size is not simply a capacity knob.}
-Increasing the latent dimension reduced MNIST reconstruction error, but the
-visual quality of prior samples did not improve in the same way. The decoder
-is trained primarily on latent vectors produced by the encoder. Sampling from
-the prior requires the aggregate encoded distribution to align sufficiently
-with that prior. A larger latent space can therefore improve reconstruction
-while making prior sampling harder under the same training budget.
+Although larger latent spaces improved MNIST reconstruction,
+they did not consistently improve generated samples.
+This may occur because the latent representations learned by
+the encoder do not perfectly match the standard normal prior,
+making randomly sampled latent vectors less reliable.
 
 \paragraph{KL should be interpreted jointly with reconstruction.}
-The KL term measures the distance between the encoder's approximate posterior
-and the standard normal prior. A small KL can indicate strong regularization,
-but it can also mean that the latent code carries little information. A large
-KL can accompany better reconstructions because the model is using the latent
-variables more actively. The relevant objective is the weighted sum, together
-with the quality and diversity of generated samples.
+A smaller KL divergence does not necessarily indicate a better
+model, since excessive regularization may limit how much
+information is represented in the latent space. Reconstruction
+loss and KL divergence should therefore be considered together
+with the quality of generated samples.
 
 \paragraph{Architecture has diminishing returns.}
-For both datasets, larger networks reduce reconstruction error to some degree.
-However, the visual difference between medium and deep networks is small,
-especially on MNIST with a two-dimensional latent space. The additional
-parameters are not automatically converted into better generative behavior.
-This result is consistent with the idea that the bottleneck and prior
-regularization constrain the model more strongly than the decoder's extra
-capacity in these experiments.
+Increasing network size improved reconstruction performance,
+but the visual differences between the medium and deep models
+were relatively small. This suggests that additional network
+capacity provides limited benefits for these experiments.
 
 \paragraph{Evaluation should include generation.}
-The two-moons plots make distributional errors immediately visible, while the
-MNIST grids reveal whether the requested class is preserved. These checks
-would be missed by reporting only a reconstruction loss. In particular, the
-MNIST latent-dimension experiment demonstrates that the numerically best
-reconstruction model is not necessarily the visually best model for new
-conditional samples.
+The two-moons plots reveal how closely generated points follow
+the target distribution, while the MNIST samples demonstrate
+whether the decoder produces recognizable digits that match
+their requested labels. These visual comparisons highlight
+limitations that reconstruction loss alone cannot capture.
 
 \section{Limitations and future work}
 
 The experiments use one random seed, a subset of MNIST, and a fixed training
-schedule. The full MNIST runs use 40 epochs, so the apparent degradation of
+schedule (with the exception of $\beta_{\max}$). The full MNIST runs use 40 epochs, so the apparent degradation of
 larger latent spaces could partly reflect optimization time or the chosen
 KL warm-up schedule rather than an inherent limitation of those dimensions.
 The visual ranking is also based on a finite number of generated images and
 human judgment. A more complete study would repeat each configuration across
 several seeds, use a larger training set, tune the warm-up schedule, and
 evaluate conditional sample quality with an automated classifier or a
-class-conditional likelihood metric. It would also be useful to compare
-latent dimensions and architectures using the same selected validation
-criterion before reporting the held-out test results.
+class-conditional likelihood metric.
 
 \section{Conclusion}
 
-The VAE successfully learned the two-moons distribution and generated
-class-conditioned MNIST digits. On the two-moons problem, a latent dimension
-of two was sufficient; larger latent spaces did not provide a meaningful
-visual benefit. On MNIST, larger latent spaces produced lower reconstruction
-losses, but the two-dimensional model produced the best-looking new
-conditional samples in the visual comparison. With latent dimension fixed at
-two, the deep architecture was numerically and visually only slightly better
-than the medium model, while the shallow model used far fewer parameters but
-lost some performance. Overall, these results support selecting a VAE based
-on both reconstruction/regularization metrics and the quality of samples
-drawn from the latent prior.
+The results show a trade-off between reconstruction accuracy and the quality of samples drawn from the prior. On two moons, a two-dimensional latent space captured both branches, and larger spaces offered little visible benefit. On conditional MNIST, larger latent spaces reduced reconstruction loss, but the two-dimensional model produced the most recognizable prior samples in our visual comparison. With the latent dimension fixed at $z=2$, the shallow, medium, and deep MNIST architectures produced broadly similar samples; the deep model improved reconstruction metrics modestly, while the smaller shallow model used fewer parameters but performed worse numerically. These findings show why reconstruction and KL losses should be considered alongside generated-sample quality and computational cost. Because the MNIST experiment uses a subset of the data and a single seed, the visual ranking should be treated as suggestive rather than definitive.
 
 \end{document}
